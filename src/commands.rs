@@ -14,3 +14,5 @@ pub mod plugins;
 pub mod templates;
 /// Commands for starting the runtime.
 pub mod up;
+/// commands for external subcommands
+pub mod external;
