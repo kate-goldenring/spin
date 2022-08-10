@@ -11,5 +11,3 @@ pub const STAGING_DIR_OPT: &str = "STAGING_DIR";
 pub const HIPPO_SERVER_URL_OPT: &str = "HIPPO_SERVER_URL";
 pub const HIPPO_URL_ENV: &str = "HIPPO_URL";
 pub const BUILD_UP_OPT: &str = "UP";
-// TODO: Why is this a convention
-pub const PLUGIN_NAME_OPT: &str = "PLUGIN_NAME";

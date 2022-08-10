@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
 use spin_cli::commands::{
     bindle::BindleCommands, build::BuildCommand, deploy::DeployCommand, new::NewCommand, plugins::PluginCommands,
-    templates::TemplateCommands, up::UpCommand,
+    templates::TemplateCommands, up::UpCommand, external::execute_external_subcommand,
 };
 use spin_http_engine::HttpTrigger;
 use spin_redis_engine::RedisTrigger;
@@ -16,14 +16,7 @@ async fn main() -> Result<(), Error> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .with_ansi(atty::is(atty::Stream::Stderr))
         .init();
-    match SpinApp::try_parse() {
-        Ok(app) => app.run().await,
-        Err(e) => {
-            println!("error");
-            // TODO get command args here
-            Ok(())
-        }
-    }
+        SpinApp::parse().run().await
 }
 
 lazy_static! {
@@ -39,8 +32,7 @@ fn version() -> &'static str {
 #[derive(Parser)]
 #[clap(
     name = "spin",
-    version = version(),
-    allow_external_subcommands(true),    
+    version = version(),   
 )]
 enum SpinApp {
     #[clap(subcommand)]
@@ -55,6 +47,8 @@ enum SpinApp {
     Plugin(PluginCommands),
     #[clap(subcommand, hide = true)]
     Trigger(TriggerCommands),
+    #[clap(external_subcommand)]
+    External(Vec<String>),
 }
 
 #[derive(Subcommand)]
@@ -76,10 +70,9 @@ impl SpinApp {
             Self::Trigger(TriggerCommands::Http(cmd)) => cmd.run().await,
             Self::Trigger(TriggerCommands::Redis(cmd)) => cmd.run().await,
             Self::Plugin(cmd) => cmd.run().await,
-            _ => {
-                println!("external command was issued");
-                Ok(())
-            },
+            Self::External(cmd) => {
+                execute_external_subcommand(cmd).await
+            }
         }
     }
 }

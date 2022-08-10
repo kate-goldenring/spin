@@ -1,15 +1,11 @@
 use std::path::PathBuf;
-
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-use comfy_table::Table;
+use spin_plugins::install::PluginInstaller;
 
-// use spin_plugins::{
-//     InstallOptions, InstallationResults, InstalledPluginWarning, ListResults, ProgressReporter,
-//     SkippedReason, PluginManager, PluginSource,
-// };
-use crate::opts::PLUGIN_NAME_OPT;
+const SPIN_PLUGINS_REPO: &str = "https://raw.githubusercontent.com/karthik2804/spin-plugins/main/plugins/";
 
+/// Install/uninstall plugins
 #[derive(Subcommand, Debug)]
 pub enum PluginCommands {
     /// Install plugin from the Spin plugin repository.
@@ -35,7 +31,7 @@ impl PluginCommands {
     }
 }
 
-/// Install plugins from a Git repository or local directory.
+/// Install plugins from remote source
 #[derive(Parser, Debug)]
 pub struct Install {
     /// Name of Spin plugin.
@@ -49,20 +45,16 @@ pub struct Install {
 impl Install {
     pub async fn run(self) -> Result<()> {
         println!("The name of the plugin being installed {:?}", self.name);
+        PluginInstaller::new(&self.name, SPIN_PLUGINS_REPO, get_spin_plugins_directory()?)?.install().await?;
         Ok(())
     }
 }
 
-/// Install plugins from a Git repository or local directory.
+/// Remove the specified plugin
 #[derive(Parser, Debug)]
 pub struct Uninstall {
     /// Name of Spin plugin.
-    #[clap(
-        name = PLUGIN_NAME_OPT,
-        long = "plugin-name",
-    )]
     pub name: String,
-    // If present, updates existing plugins instead of skipping.
     // TODO: think about how to handle breaking changes
     // #[structopt(long = "update")]
     // pub update: bool,
@@ -70,7 +62,16 @@ pub struct Uninstall {
 
 impl Uninstall {
     pub async fn run(self) -> Result<()> {
-        println!("The name of the plugin being uninstalled {:?}", self.name);
+        println!("The plugin {:?} will be removed", self.name);
         Ok(())
     }
+}
+
+/// Gets the path to where Spin plugin are (to be) installed
+pub fn get_spin_plugins_directory() -> anyhow::Result<PathBuf> {
+    let data_dir = dirs::data_local_dir()
+        .or_else(|| dirs::home_dir().map(|p| p.join(".spin")))
+        .ok_or_else(|| anyhow!("Unable to get local data directory or home directory"))?;
+    let plugins_dir = data_dir.join("spin").join("plugins");
+    Ok(plugins_dir)
 }
