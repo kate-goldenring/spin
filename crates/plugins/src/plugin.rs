@@ -39,16 +39,16 @@ pub(crate) enum Architecture {
 
 #[cfg(test)]
 mod test {
-use super::*;
+    use super::*;
 
-#[test]
-fn test_plugin_json() {
-    let name = "test";
-    let description = "Some description.";
-    let homepage =  "www.example.com";
-    let version = "1.0";
-    let license = "Mit";
-    let plugin_json = r#"
+    #[test]
+    fn test_plugin_json() {
+        let name = "test";
+        let description = "Some description.";
+        let homepage = "www.example.com";
+        let version = "1.0";
+        let license = "Mit";
+        let plugin_json = r#"
         {
             "name": "test",
             "description": "Some description.",
@@ -79,19 +79,22 @@ fn test_plugin_json() {
 
         let deserialized_plugin: Plugin = serde_json::from_str(plugin_json).unwrap();
         assert_eq!(deserialized_plugin.name, name.to_owned());
-        assert_eq!(deserialized_plugin.description, Some(description.to_owned()));
+        assert_eq!(
+            deserialized_plugin.description,
+            Some(description.to_owned())
+        );
         assert_eq!(deserialized_plugin.homepage, Some(homepage.to_owned()));
         assert_eq!(deserialized_plugin.version, version.to_owned());
         assert_eq!(deserialized_plugin.license, license.to_owned());
         assert_eq!(deserialized_plugin.packages.len(), 3);
-}
+    }
 
-#[test]
-fn test_plugin_json_empty_options() {
-    let name = "test";
-    let version = "1.0";
-    let license = "Mit";
-    let plugin_json = r#"
+    #[test]
+    fn test_plugin_json_empty_options() {
+        let name = "test";
+        let version = "1.0";
+        let license = "Mit";
+        let plugin_json = r#"
         {
             "name": "test",
             "version": "1.0",
@@ -125,5 +128,5 @@ fn test_plugin_json_empty_options() {
         assert_eq!(deserialized_plugin.version, version.to_owned());
         assert_eq!(deserialized_plugin.license, license.to_owned());
         assert_eq!(deserialized_plugin.packages.len(), 3);
-}
+    }
 }

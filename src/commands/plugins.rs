@@ -1,9 +1,10 @@
-use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 use spin_plugins::install::PluginInstaller;
+use std::path::PathBuf;
 
-const SPIN_PLUGINS_REPO: &str = "https://raw.githubusercontent.com/karthik2804/spin-plugins/main/plugins/";
+const SPIN_PLUGINS_REPO: &str =
+    "https://raw.githubusercontent.com/karthik2804/spin-plugins/main/plugins/";
 
 /// Install/uninstall plugins
 #[derive(Subcommand, Debug)]
@@ -16,9 +17,8 @@ pub enum PluginCommands {
 
     /// Remove a plugin from your installation.
     Uninstall(Uninstall),
-
     // TODO: consider Search command
-    
+
     // TODO: consider List command
 }
 
@@ -45,7 +45,9 @@ pub struct Install {
 impl Install {
     pub async fn run(self) -> Result<()> {
         println!("The name of the plugin being installed {:?}", self.name);
-        PluginInstaller::new(&self.name, SPIN_PLUGINS_REPO, get_spin_plugins_directory()?)?.install().await?;
+        PluginInstaller::new(&self.name, SPIN_PLUGINS_REPO, get_spin_plugins_directory()?)?
+            .install()
+            .await?;
         Ok(())
     }
 }
