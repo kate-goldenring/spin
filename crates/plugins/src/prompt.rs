@@ -44,6 +44,7 @@ impl Prompter {
 
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
     
