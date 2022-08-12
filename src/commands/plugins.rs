@@ -1,10 +1,11 @@
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-use spin_plugins::install::PluginInstaller;
+use semver::Version;
+use spin_plugins::install::{ManifestLocation, PluginInfo, PluginInstaller};
 use std::path::PathBuf;
+use url::Url;
 
-const SPIN_PLUGINS_REPO: &str =
-    "https://raw.githubusercontent.com/karthik2804/spin-plugins/main/plugins/";
+const SPIN_PLUGINS_REPO: &str = "https://github.com/karthik2804/spin-plugins/";
 
 /// Install/uninstall plugins
 #[derive(Subcommand, Debug)]
@@ -35,19 +36,63 @@ impl PluginCommands {
 #[derive(Parser, Debug)]
 pub struct Install {
     /// Name of Spin plugin.
-    pub name: String,
-    // If present, updates existing plugins instead of skipping.
-    // TODO: think about how to handle breaking changes
-    // #[structopt(long = "update")]
-    // pub update: bool,
+    #[clap(
+        name = "PLUGIN_NAME",
+        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
+        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
+        required_unless_present_any = ["REMOTE_PLUGIN_MANIFEST", "LOCAL_PLUGIN_MANIFEST"],
+    )]
+    pub name: Option<String>,
+    /// source of local manifest file
+    #[clap(
+        name = "LOCAL_PLUGIN_MANIFEST",
+        short = 'f',
+        long = "file",
+        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
+        conflicts_with = "PLUGIN_NAME"
+    )]
+    pub local_manifest_src: Option<PathBuf>,
+    /// source of remote manifest file
+    #[clap(
+        name = "REMOTE_PLUGIN_MANIFEST",
+        short = 'u',
+        long = "url",
+        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
+        conflicts_with = "PLUGIN_NAME"
+    )]
+    pub remote_manifest_src: Option<Url>,
+    /// skips prompt to accept the installation of the plugin.
+    #[clap(short = 'y', long = "yes", takes_value = false)]
+    pub yes_to_all: bool,
+    /// specify particular version of plugin to install from centralized repository
+    #[clap(
+        long = "version",
+        short = 'v',
+        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
+        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
+        requires("PLUGIN_NAME")
+    )]
+    /// Specify a particular version of the plugin to be installed from the Centralized Repository
+    pub version: Option<Version>,
 }
 
 impl Install {
     pub async fn run(self) -> Result<()> {
-        println!("The name of the plugin being installed {:?}", self.name);
-        PluginInstaller::new(&self.name, SPIN_PLUGINS_REPO, get_spin_plugins_directory()?)?
-            .install()
-            .await?;
+        println!("Attempting to install plugin: {:?}", self.name);
+        let manifest_location = match (self.local_manifest_src, self.remote_manifest_src, self.name) {
+            // TODO: move all this parsing into clap to catch input errors.
+            (Some(path), None, None) => ManifestLocation::Local(path),          
+            (None, Some(url), None) => ManifestLocation::Remote(url),
+            (None, None, Some(name)) => ManifestLocation::PluginsRepository(PluginInfo::new(name, Url::parse(SPIN_PLUGINS_REPO)?)),
+            _ => return Err(anyhow::anyhow!("Must provide plugin name for plugin look up xor remote xor local path to plugin manifest")),
+        };
+        PluginInstaller::new(
+            manifest_location,
+            get_spin_plugins_directory()?,
+            self.yes_to_all,
+        )
+        .install()
+        .await?;
         Ok(())
     }
 }

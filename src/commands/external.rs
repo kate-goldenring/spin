@@ -1,5 +1,4 @@
-use anyhow::{anyhow, Result};
-use std::process::Stdio;
+use anyhow::Result;
 use tokio::process::Command;
 use tracing::log;
 
@@ -15,30 +14,13 @@ pub async fn execute_external_subcommand(args: Vec<String>) -> Result<()> {
         .join(args.first().unwrap())
         .join(args.first().unwrap());
     let mut command = Command::new(path);
-    command.stdin(Stdio::inherit()).stdout(Stdio::inherit());
     if args.len() > 1 {
         command.args(&args[1..]);
     }
     log::info!("Executing command {:?}", command);
-    let clone_result = command.output().await?;
-    // match clone_result {
-    //     Ok(_) => println!("Was spawned :)"),
-    //     Err(e) => {
-    //         eprintln!("External subcommand failed: {}", e.kind());
-    //     }
-    // }
-    // Ok(())
-    match clone_result.status.success() {
-        true => {
-            // TODO: remove later
-            println!("Successful executing command");
-            Ok(())
-        }
-        false => Err(anyhow!(
-            "Error executing command {:?}: {}",
-            command,
-            String::from_utf8(clone_result.stderr)
-                .unwrap_or_else(|_| "(cannot get error)".to_owned())
-        )),
-    }
+    // Allow user to interact with stdio/stdout of child process
+    let _ = command.status().await?;
+    // TODO: handle the status
+
+    Ok(())
 }

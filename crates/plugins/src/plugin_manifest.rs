@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
-pub(crate) struct Plugin {
+pub(crate) struct PluginManifest {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
@@ -77,7 +77,7 @@ mod test {
             ]
         }"#;
 
-        let deserialized_plugin: Plugin = serde_json::from_str(plugin_json).unwrap();
+        let deserialized_plugin: PluginManifest = serde_json::from_str(plugin_json).unwrap();
         assert_eq!(deserialized_plugin.name, name.to_owned());
         assert_eq!(
             deserialized_plugin.description,
@@ -121,7 +121,7 @@ mod test {
             ]
         }"#;
 
-        let deserialized_plugin: Plugin = serde_json::from_str(plugin_json).unwrap();
+        let deserialized_plugin: PluginManifest = serde_json::from_str(plugin_json).unwrap();
         assert_eq!(deserialized_plugin.name, name.to_owned());
         assert_eq!(deserialized_plugin.description, None);
         assert_eq!(deserialized_plugin.homepage, None);
