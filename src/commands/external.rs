@@ -1,5 +1,5 @@
+use anyhow::{anyhow, Result};
 use std::process::Stdio;
-use anyhow::{anyhow,Result};
 use tokio::process::Command;
 use tracing::log;
 
@@ -15,8 +15,7 @@ pub async fn execute_external_subcommand(args: Vec<String>) -> Result<()> {
         .join(args.first().unwrap())
         .join(args.first().unwrap());
     let mut command = Command::new(path);
-    command.stdin(Stdio::inherit())
-        .stdout(Stdio::inherit());
+    command.stdin(Stdio::inherit()).stdout(Stdio::inherit());
     if args.len() > 1 {
         command.args(&args[1..]);
     }
