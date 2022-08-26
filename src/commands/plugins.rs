@@ -5,7 +5,7 @@ use spin_plugins::install::{ManifestLocation, PluginInfo, PluginInstaller};
 use std::path::PathBuf;
 use url::Url;
 
-const SPIN_PLUGINS_REPO: &str = "https://github.com/karthik2804/spin-plugins/";
+const SPIN_PLUGINS_REPO: &str = "https://github.com/fermyon/spin-plugins/";
 
 /// Install/uninstall plugins
 #[derive(Subcommand, Debug)]

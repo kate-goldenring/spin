@@ -15,7 +15,7 @@ use url::Url;
 /// Name of the subdirectory that contains the installed plugin JSON manifests
 const PLUGIN_MANIFESTS_DIRECTORY_NAME: &str = "manifests";
 const PLUGINS_REPO_LOCAL_DIRECTORY: &str = ".spin-plugins";
-const PLUGINS_REPO_MANIFESTS_DIRECTORY: &str = "plugins";
+const PLUGINS_REPO_MANIFESTS_DIRECTORY: &str = "manifests";
 
 pub enum ManifestLocation {
     Local(PathBuf),
@@ -98,6 +98,7 @@ impl PluginInstaller {
                         .plugins_dir
                         .join(PLUGINS_REPO_LOCAL_DIRECTORY)
                         .join(PLUGINS_REPO_MANIFESTS_DIRECTORY)
+                        .join(&info.name)
                         .join(get_manifest_file_name(&info.name)),
                 )?;
                 serde_json::from_reader(file)?
@@ -109,7 +110,7 @@ impl PluginInstaller {
         } else if cfg!(target_os = "linux") {
             Os::Linux
         } else if cfg!(target_os = "macos") {
-            Os::MacOs
+            Os::Osx
         } else {
             return Err(anyhow!("This plugin is not supported on this OS"));
         };

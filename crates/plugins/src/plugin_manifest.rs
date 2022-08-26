@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct PluginManifest {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8,6 +9,7 @@ pub(crate) struct PluginManifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     homepage: Option<String>,
     version: String,
+    spin_compatibility: String,
     pub license: String,
     pub packages: Vec<PluginPackage>,
 }
@@ -24,7 +26,7 @@ pub(crate) struct PluginPackage {
 #[serde(rename_all = "camelCase")]
 pub(crate) enum Os {
     Linux,
-    MacOs,
+    Osx,
     Windows,
 }
 
@@ -54,6 +56,7 @@ mod test {
             "description": "Some description.",
             "homepage": "www.example.com",
             "version": "1.0",
+            "spinCompatibility": "=0.4",
             "license": "Mit",
             "packages": [
                 {
@@ -69,7 +72,7 @@ mod test {
                     "sha256": "eee4f00b12345e38acae2d19b2a707a4fhdjdfdd22875efeefdf052ce19c90b"
                 },
                 {
-                    "os": "macOs",
+                    "os": "osx",
                     "arch": "aarch64",
                     "url": "www.example.com/releases/1.0/binary.tgz",
                     "sha256": "eeegf00b12345e38acae2d19b2a707a4fhdjdfdd22875efeefdf052ce19c90b"
@@ -98,6 +101,7 @@ mod test {
         {
             "name": "test",
             "version": "1.0",
+            "spinCompatibility": "=0.4",
             "license": "Mit",
             "packages": [
                 {
@@ -113,7 +117,7 @@ mod test {
                     "sha256": "eee4f00b12345e38acae2d19b2a707a4fhdjdfdd22875efeefdf052ce19c90b"
                 },
                 {
-                    "os": "macOs",
+                    "os": "osx",
                     "arch": "aarch64",
                     "url": "www.example.com/releases/1.0/binary.tgz",
                     "sha256": "eeegf00b12345e38acae2d19b2a707a4fhdjdfdd22875efeefdf052ce19c90b"
