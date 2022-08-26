@@ -19,7 +19,7 @@ impl GitSource {
     ) -> Result<GitSource> {
         Ok(Self {
             source_url: source_url.clone(),
-            branch: branch.unwrap_or(PLUGINS_REPO_BRANCH.to_owned()),
+            branch: branch.unwrap_or_else(|| PLUGINS_REPO_BRANCH.to_owned()),
             local_repo_dir,
         })
     }

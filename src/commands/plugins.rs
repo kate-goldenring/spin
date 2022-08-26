@@ -81,7 +81,7 @@ impl Install {
         println!("Attempting to install plugin: {:?}", self.name);
         let manifest_location = match (self.local_manifest_src, self.remote_manifest_src, self.name) {
             // TODO: move all this parsing into clap to catch input errors.
-            (Some(path), None, None) => ManifestLocation::Local(path),          
+            (Some(path), None, None) => ManifestLocation::Local(path),
             (None, Some(url), None) => ManifestLocation::Remote(url),
             (None, None, Some(name)) => ManifestLocation::PluginsRepository(PluginInfo::new(name, Url::parse(SPIN_PLUGINS_REPO)?)),
             _ => return Err(anyhow::anyhow!("Must provide plugin name for plugin look up xor remote xor local path to plugin manifest")),

@@ -10,11 +10,7 @@ pub(crate) struct Prompter {
 }
 
 impl Prompter {
-    pub fn new(
-        plugin_name: &str,
-        plugin_license: &str,
-        source_url: &str,
-    ) -> Result<Self> {
+    pub fn new(plugin_name: &str, plugin_license: &str, source_url: &str) -> Result<Self> {
         Ok(Self {
             plugin_name: plugin_name.to_string(),
             plugin_license: plugin_license.to_string(),

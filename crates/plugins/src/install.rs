@@ -90,7 +90,7 @@ impl PluginInstaller {
                     git_source.clone().await?;
                     // self.get_latest_plugin_repo(&info.repo_url)?;
                 } else {
-                    let _ = git_source.pull().await?;
+                    git_source.pull().await?;
                     // self.update_plugins_repository()?;
                 }
                 let file = File::open(
@@ -123,14 +123,13 @@ impl PluginInstaller {
         let target_url = plugin_package.url.to_owned();
 
         // Ask for user confirmation if not overridden with CLI option
-        if !self.yes_to_all {
-            if !Prompter::new(&plugin_manifest.name, &plugin_manifest.license, &target_url)?
+        if !self.yes_to_all
+            && !Prompter::new(&plugin_manifest.name, &plugin_manifest.license, &target_url)?
                 .run()?
-            {
-                // User has requested to not install package, returning early
-                println!("Plugin {} will not be installed", plugin_manifest.name);
-                return Ok(());
-            }
+        {
+            // User has requested to not install package, returning early
+            println!("Plugin {} will not be installed", plugin_manifest.name);
+            return Ok(());
         }
         let temp_dir = tempdir()?;
         let plugin_file_name =
