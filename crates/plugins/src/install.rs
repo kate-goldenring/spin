@@ -1,4 +1,7 @@
-use crate::{get_manifest_file_name, PLUGIN_MANIFESTS_DIRECTORY_NAME};
+use crate::{
+    get_manifest_file_name, version_check::assert_supported_version,
+    PLUGIN_MANIFESTS_DIRECTORY_NAME,
+};
 
 use super::git::GitSource;
 use super::plugin_manifest::{Os, PluginManifest};
@@ -39,6 +42,7 @@ pub struct PluginInstaller {
     manifest_location: ManifestLocation,
     plugins_dir: PathBuf,
     yes_to_all: bool,
+    spin_version: String,
 }
 
 impl PluginInstaller {
@@ -46,11 +50,13 @@ impl PluginInstaller {
         manifest_location: ManifestLocation,
         plugins_dir: PathBuf,
         yes_to_all: bool,
+        spin_version: &str,
     ) -> Self {
         Self {
             manifest_location,
             plugins_dir,
             yes_to_all,
+            spin_version: spin_version.to_string(),
         }
     }
 
@@ -105,6 +111,8 @@ impl PluginInstaller {
                 serde_json::from_reader(file)?
             }
         };
+
+        assert_supported_version(&self.spin_version, &plugin_manifest.spin_compatibility)?;
 
         let os: Os = if cfg!(target_os = "windows") {
             Os::Windows
