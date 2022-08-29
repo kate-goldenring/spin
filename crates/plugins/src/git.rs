@@ -55,7 +55,7 @@ impl GitSource {
         let pull_result = git.output().await?;
         match pull_result.status.success() {
             true => {
-                println!("Updated Repository Successfully");
+                println!("Updated repository successfully");
                 Ok(())
             }
             false => Err(anyhow!(
