@@ -28,7 +28,7 @@ impl GitSource {
         let mut git = Command::new("git");
         git.args([
             "clone",
-            &self.source_url.to_string(),
+            self.source_url.as_ref(),
             "--branch",
             &self.branch,
             "--single-branch",
