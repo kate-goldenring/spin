@@ -1,9 +1,10 @@
 mod git;
-mod plugin_manifest;
 // TODO: just export PluginInstaller
 pub mod install;
+mod plugin_manifest;
 mod prompt;
 pub mod uninstall;
+pub mod version_check;
 
 /// Directory where the manifests of installed plugins are stored.
 const PLUGIN_MANIFESTS_DIRECTORY_NAME: &str = "manifests";

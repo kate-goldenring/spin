@@ -81,7 +81,6 @@ pub struct Install {
 
 impl Install {
     pub async fn run(self) -> Result<()> {
-        println!("Attempting to install plugin: {:?}", self.name);
         let manifest_location = match (self.local_manifest_src, self.remote_manifest_src, self.name) {
             // TODO: move all this parsing into clap to catch input errors.
             (Some(path), None, None) => ManifestLocation::Local(path),
@@ -93,6 +92,7 @@ impl Install {
             manifest_location,
             get_spin_plugins_directory()?,
             self.yes_to_all,
+            env!("VERGEN_BUILD_SEMVER"),
         )
         .install()
         .await?;
