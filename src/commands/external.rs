@@ -4,7 +4,7 @@ use tracing::log;
 
 use crate::commands::plugins::get_spin_plugins_directory;
 
-// TODO: Add capability to distinguish between standalone binaries and pluigns
+// TODO: Add capability to distinguish between standalone binaries and plugins
 // TODO: Should this be a struct to maintain consistency across subcommands?
 
 pub async fn execute_external_subcommand(args: Vec<String>) -> Result<()> {

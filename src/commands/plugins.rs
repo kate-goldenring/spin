@@ -1,7 +1,10 @@
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 use semver::Version;
-use spin_plugins::install::{ManifestLocation, PluginInfo, PluginInstaller};
+use spin_plugins::{
+    install::{ManifestLocation, PluginInfo, PluginInstaller},
+    uninstall::PluginUninstaller,
+};
 use std::path::PathBuf;
 use url::Url;
 
@@ -109,7 +112,8 @@ pub struct Uninstall {
 
 impl Uninstall {
     pub async fn run(self) -> Result<()> {
-        println!("The plugin {:?} will be removed", self.name);
+        PluginUninstaller::new(&self.name, get_spin_plugins_directory()?).run()?;
+        println!("Uninstalled plugin {} successfully", &self.name);
         Ok(())
     }
 }

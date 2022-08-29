@@ -1,3 +1,5 @@
+use crate::{get_manifest_file_name, PLUGIN_MANIFESTS_DIRECTORY_NAME};
+
 use super::git::GitSource;
 use super::plugin_manifest::{Os, PluginManifest};
 use super::prompt::Prompter;
@@ -13,7 +15,6 @@ use tempfile::{tempdir, TempDir};
 use url::Url;
 
 /// Name of the subdirectory that contains the installed plugin JSON manifests
-const PLUGIN_MANIFESTS_DIRECTORY_NAME: &str = "manifests";
 const PLUGINS_REPO_LOCAL_DIRECTORY: &str = ".spin-plugins";
 const PLUGINS_REPO_MANIFESTS_DIRECTORY: &str = "manifests";
 
@@ -196,10 +197,6 @@ impl PluginInstaller {
         )?;
         Ok(())
     }
-}
-
-fn get_manifest_file_name(plugin_name: &str) -> String {
-    format!("{}.json", plugin_name)
 }
 
 fn file_digest_string(path: impl AsRef<Path>) -> Result<String> {
