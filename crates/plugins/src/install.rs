@@ -1,5 +1,6 @@
 use crate::{
-    get_manifest_file_name, version_check::assert_supported_version,
+    get_manifest_file_name, get_manifest_file_name_version,
+    version_check::{assert_supported_version, get_plugin_manifest},
     PLUGIN_MANIFESTS_DIRECTORY_NAME,
 };
 
@@ -8,6 +9,7 @@ use super::plugin_manifest::{Os, PluginManifest};
 use super::prompt::Prompter;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
+use semver::Version;
 use std::{
     fs::{self, File},
     io::{copy, Cursor},
@@ -30,11 +32,15 @@ pub enum ManifestLocation {
 pub struct PluginInfo {
     name: String,
     repo_url: Url,
-    // version
+    version: Option<Version>,
 }
 impl PluginInfo {
-    pub fn new(name: String, repo_url: Url) -> Self {
-        Self { name, repo_url }
+    pub fn new(name: String, repo_url: Url, version: Option<Version>) -> Self {
+        Self {
+            name,
+            repo_url,
+            version,
+        }
     }
 }
 
@@ -95,10 +101,8 @@ impl PluginInstaller {
                     .exists()
                 {
                     git_source.clone().await?;
-                    // self.get_latest_plugin_repo(&info.repo_url)?;
                 } else {
                     git_source.pull().await?;
-                    // self.update_plugins_repository()?;
                 }
                 let file = File::open(
                     &self
@@ -106,11 +110,33 @@ impl PluginInstaller {
                         .join(PLUGINS_REPO_LOCAL_DIRECTORY)
                         .join(PLUGINS_REPO_MANIFESTS_DIRECTORY)
                         .join(&info.name)
-                        .join(get_manifest_file_name(&info.name)),
-                )?;
+                        .join(get_manifest_file_name_version(&info.name, &info.version)),
+                )
+                .map_err(|_| {
+                    anyhow!(
+                        "Could not find plugin [{} {:?}] in centralized repository",
+                        info.name,
+                        info.version
+                            .as_ref()
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| String::from("latest"))
+                    )
+                })?;
                 serde_json::from_reader(file)?
             }
         };
+
+        // Return early if plugin is already installed with latest version
+        if let Ok(installed) = get_plugin_manifest(&plugin_manifest.name, &self.plugins_dir) {
+            if installed.version >= plugin_manifest.version {
+                return Err(anyhow!(
+                    "plugin {} already installed with version {} but attempting to install same or older version ({})",
+                    installed.name,
+                    installed.version,
+                    plugin_manifest.version,
+                ));
+            }
+        }
 
         assert_supported_version(&self.spin_version, &plugin_manifest.spin_compatibility)?;
 
