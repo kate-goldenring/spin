@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
+use semver::Version;
 use spin_plugins::{
     install::{ManifestLocation, PluginInfo, PluginInstaller},
     uninstall::PluginUninstaller,
@@ -75,7 +76,7 @@ pub struct Install {
         requires("PLUGIN_NAME")
     )]
     /// Specify a particular version of the plugin to be installed from the Centralized Repository
-    pub version: Option<String>,
+    pub version: Option<Version>,
 }
 
 impl Install {

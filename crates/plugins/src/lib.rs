@@ -14,7 +14,7 @@ fn get_manifest_file_name(plugin_name: &str) -> String {
 }
 
 // Given a name and option version, outputs expected file name for the plugin.
-fn get_manifest_file_name_version(plugin_name: &str, version: &Option<String>) -> String {
+fn get_manifest_file_name_version(plugin_name: &str, version: &Option<semver::Version>) -> String {
     match version {
         Some(v) => format!("{}@{}.json", plugin_name, v),
         None => get_manifest_file_name(plugin_name),

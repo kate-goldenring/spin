@@ -9,6 +9,7 @@ use super::plugin_manifest::{Os, PluginManifest};
 use super::prompt::Prompter;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
+use semver::Version;
 use std::{
     fs::{self, File},
     io::{copy, Cursor},
@@ -31,10 +32,10 @@ pub enum ManifestLocation {
 pub struct PluginInfo {
     name: String,
     repo_url: Url,
-    version: Option<String>,
+    version: Option<Version>,
 }
 impl PluginInfo {
-    pub fn new(name: String, repo_url: Url, version: Option<String>) -> Self {
+    pub fn new(name: String, repo_url: Url, version: Option<Version>) -> Self {
         Self {
             name,
             repo_url,
@@ -113,9 +114,12 @@ impl PluginInstaller {
                 )
                 .map_err(|_| {
                     anyhow!(
-                        "Could not find plugin {} version {} in centralized repository",
+                        "Could not find plugin [{} {:?}] in centralized repository",
                         info.name,
-                        info.version.as_ref().unwrap_or(&String::from("latest"))
+                        info.version
+                            .as_ref()
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| String::from("latest"))
                     )
                 })?;
                 serde_json::from_reader(file)?
