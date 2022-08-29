@@ -26,7 +26,7 @@ pub fn assert_supported_version(spin_version: &str, supported: &str) -> Result<(
     }
 }
 
-fn get_plugin_manifest(plugin_name: &str, plugins_dir: &Path) -> Result<PluginManifest> {
+pub(crate) fn get_plugin_manifest(plugin_name: &str, plugins_dir: &Path) -> Result<PluginManifest> {
     let manifest_path = plugins_dir
         .join(PLUGIN_MANIFESTS_DIRECTORY_NAME)
         .join(get_manifest_file_name(plugin_name));

@@ -1,5 +1,6 @@
 use crate::{
-    get_manifest_file_name, version_check::assert_supported_version,
+    get_manifest_file_name, get_manifest_file_name_version,
+    version_check::{assert_supported_version, get_plugin_manifest},
     PLUGIN_MANIFESTS_DIRECTORY_NAME,
 };
 
@@ -30,11 +31,15 @@ pub enum ManifestLocation {
 pub struct PluginInfo {
     name: String,
     repo_url: Url,
-    // version
+    version: Option<String>,
 }
 impl PluginInfo {
-    pub fn new(name: String, repo_url: Url) -> Self {
-        Self { name, repo_url }
+    pub fn new(name: String, repo_url: Url, version: Option<String>) -> Self {
+        Self {
+            name,
+            repo_url,
+            version,
+        }
     }
 }
 
@@ -106,11 +111,20 @@ impl PluginInstaller {
                         .join(PLUGINS_REPO_LOCAL_DIRECTORY)
                         .join(PLUGINS_REPO_MANIFESTS_DIRECTORY)
                         .join(&info.name)
-                        .join(get_manifest_file_name(&info.name)),
+                        .join(get_manifest_file_name_version(&info.name, &info.version)),
                 )?;
                 serde_json::from_reader(file)?
             }
         };
+
+        // Return early if plugin is already installed
+        if let Ok(_) = get_plugin_manifest(&plugin_manifest.name, &self.plugins_dir) {
+            return Err(anyhow!(
+                "plugin {} already installed with version {}",
+                plugin_manifest.name,
+                plugin_manifest.version
+            ));
+        }
 
         assert_supported_version(&self.spin_version, &plugin_manifest.spin_compatibility)?;
 

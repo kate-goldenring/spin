@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-use semver::Version;
 use spin_plugins::{
     install::{ManifestLocation, PluginInfo, PluginInstaller},
     uninstall::PluginUninstaller,
@@ -76,7 +75,7 @@ pub struct Install {
         requires("PLUGIN_NAME")
     )]
     /// Specify a particular version of the plugin to be installed from the Centralized Repository
-    pub version: Option<Version>,
+    pub version: Option<String>,
 }
 
 impl Install {
@@ -85,7 +84,7 @@ impl Install {
             // TODO: move all this parsing into clap to catch input errors.
             (Some(path), None, None) => ManifestLocation::Local(path),
             (None, Some(url), None) => ManifestLocation::Remote(url),
-            (None, None, Some(name)) => ManifestLocation::PluginsRepository(PluginInfo::new(name, Url::parse(SPIN_PLUGINS_REPO)?)),
+            (None, None, Some(name)) => ManifestLocation::PluginsRepository(PluginInfo::new(name, Url::parse(SPIN_PLUGINS_REPO)?, self.version)),
             _ => return Err(anyhow::anyhow!("Must provide plugin name for plugin look up xor remote xor local path to plugin manifest")),
         };
         PluginInstaller::new(
@@ -113,7 +112,6 @@ pub struct Uninstall {
 impl Uninstall {
     pub async fn run(self) -> Result<()> {
         PluginUninstaller::new(&self.name, get_spin_plugins_directory()?).run()?;
-        println!("Uninstalled plugin {} successfully", &self.name);
         Ok(())
     }
 }

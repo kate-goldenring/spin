@@ -25,6 +25,7 @@ impl PluginUninstaller {
             true => {
                 fs::remove_file(manifest_file)?;
                 fs::remove_dir_all(self.plugins_dir.join(&self.plugin_name))?;
+                println!("Uninstalled plugin {} successfully", &self.plugin_name);
             }
             false => {
                 println!(
