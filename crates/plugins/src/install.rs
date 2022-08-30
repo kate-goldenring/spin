@@ -35,9 +35,9 @@ pub struct PluginInfo {
     version: Option<Version>,
 }
 impl PluginInfo {
-    pub fn new(name: String, repo_url: Url, version: Option<Version>) -> Self {
+    pub fn new(name: &str, repo_url: Url, version: Option<Version>) -> Self {
         Self {
-            name,
+            name: name.to_string(),
             repo_url,
             version,
         }
