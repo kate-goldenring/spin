@@ -180,13 +180,18 @@ impl Upgrade {
     pub async fn run(self) -> Result<()> {
         let plugins_dir = get_spin_plugins_directory()?;
         let spin_version = env!("VERGEN_BUILD_SEMVER");
+        let manifest_dir = plugins_dir.join(PLUGIN_MANIFESTS_DIRECTORY_NAME);
+
+        // Check if no plugins are currently installed
+        if !manifest_dir.exists() {
+            println!("No currently installed plugins to update.");
+            return Ok(());
+        }
 
         if self.all {
             // Install the latest of all currently installed plugins
-            for plugin in std::fs::read_dir(&plugins_dir.join(PLUGIN_MANIFESTS_DIRECTORY_NAME))? {
-                let path = plugin
-                    .map_err(|e| anyhow!("No plugins are currently installed - {:?}", e))?
-                    .path();
+            for plugin in std::fs::read_dir(manifest_dir)? {
+                let path = plugin?.path();
                 let name = path
                     .file_stem()
                     .ok_or_else(|| anyhow!("expected directory for plugin"))?
@@ -220,7 +225,7 @@ impl Upgrade {
         } else {
             let name = self
                 .name
-                .ok_or_else(|| anyhow!("plugin name required to downgrade"))?;
+                .ok_or_else(|| anyhow!("plugin name is required for upgrades"))?;
             // If downgrade is allowed, first uninstall the plugin
             if self.downgrade {
                 PluginUninstaller::new(&name, plugins_dir.clone()).run()?;
