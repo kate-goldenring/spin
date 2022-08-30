@@ -35,9 +35,9 @@ pub struct PluginInfo {
     version: Option<Version>,
 }
 impl PluginInfo {
-    pub fn new(name: String, repo_url: Url, version: Option<Version>) -> Self {
+    pub fn new(name: &str, repo_url: Url, version: Option<Version>) -> Self {
         Self {
-            name,
+            name: name.to_string(),
             repo_url,
             version,
         }
@@ -126,9 +126,9 @@ impl PluginInstaller {
             }
         };
 
-        // Return early if plugin is already installed with latest version
+        // Disallow downgrades and reinstalling identical plugins
         if let Ok(installed) = get_plugin_manifest(&plugin_manifest.name, &self.plugins_dir) {
-            if installed.version >= plugin_manifest.version {
+            if installed.version > plugin_manifest.version || installed == plugin_manifest {
                 return Err(anyhow!(
                     "plugin {} already installed with version {} but attempting to install same or older version ({})",
                     installed.name,
@@ -189,6 +189,7 @@ impl PluginInstaller {
         archive.set_preserve_permissions(true);
         // Create subdirectory in plugins directory for this plugin
         let plugin_sub_dir = self.plugins_dir.join(plugin_name);
+        fs::remove_dir_all(&plugin_sub_dir).ok();
         fs::create_dir_all(&plugin_sub_dir)?;
         archive.unpack(&plugin_sub_dir)?;
         Ok(())
