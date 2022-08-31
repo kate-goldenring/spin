@@ -22,6 +22,8 @@ use url::Url;
 /// Name of the subdirectory that contains the installed plugin JSON manifests
 const PLUGINS_REPO_LOCAL_DIRECTORY: &str = ".spin-plugins";
 const PLUGINS_REPO_MANIFESTS_DIRECTORY: &str = "manifests";
+/// Anticipated url scheme prefix in manifest to indicate local path to plugin binary
+const URL_FILE_SCHEME: &str = "file";
 
 pub enum ManifestLocation {
     Local(PathBuf),
@@ -155,26 +157,30 @@ impl PluginInstaller {
             .iter()
             .find(|p| p.os == os)
             .ok_or_else(|| anyhow!("This plugin does not support this OS"))?;
-        let target_url = plugin_package.url.to_owned();
+        let target = plugin_package.url.to_owned();
 
         // Ask for user confirmation if not overridden with CLI option
         if !self.yes_to_all
-            && !Prompter::new(&plugin_manifest.name, &plugin_manifest.license, &target_url)?
-                .run()?
+            && !Prompter::new(&plugin_manifest.name, &plugin_manifest.license, &target)?.run()?
         {
             // User has requested to not install package, returning early
             println!("Plugin {} will not be installed", plugin_manifest.name);
             return Ok(());
         }
+        let target_url = Url::parse(&target)?;
         let temp_dir = tempdir()?;
-        let plugin_file_name =
-            PluginInstaller::download_plugin(&plugin_manifest.name, &temp_dir, &target_url).await?;
-        self.verify_checksum(&plugin_file_name, &plugin_package.sha256)?;
+        let plugin_tarball_path = match target_url.scheme() {
+            URL_FILE_SCHEME => PathBuf::from(target_url.path()),
+            _ => {
+                PluginInstaller::download_plugin(&plugin_manifest.name, &temp_dir, &target).await?
+            }
+        };
+        self.verify_checksum(&plugin_tarball_path, &plugin_package.sha256)?;
 
-        self.untar_plugin(&plugin_file_name, &plugin_manifest.name)?;
+        self.untar_plugin(&plugin_tarball_path, &plugin_manifest.name)?;
         // Save manifest to installed plugins directory
         self.add_to_manifest_dir(&plugin_manifest)?;
-        log::info!("Plugin installed successfully");
+        log::info!("Plugin [{}] installed successfully", plugin_manifest.name);
         Ok(())
     }
 
