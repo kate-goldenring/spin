@@ -1,8 +1,7 @@
-/// Prompts user as to whether they trust the source of the plugin and
-/// want to proceed with installation
 use anyhow::Result;
 use std::io;
-
+/// Prompts user as to whether they trust the source of the plugin and
+/// want to proceed with installation
 pub(crate) struct Prompter {
     plugin_name: String,
     plugin_license: String,
@@ -33,7 +32,6 @@ impl Prompter {
     fn parse_response(&self, resp: &mut str) -> bool {
         let resp = resp.trim().to_lowercase();
         resp.eq("yes") || resp.eq("y")
-        // TODO: consider checking for invalid response
     }
 
     // Returns whether or not the user would like to proceed with the installation

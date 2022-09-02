@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PluginManifest {
-    pub name: String,
+    name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12,6 +12,12 @@ pub(crate) struct PluginManifest {
     pub spin_compatibility: String,
     pub license: String,
     pub packages: Vec<PluginPackage>,
+}
+
+impl PluginManifest {
+    pub fn name(&self) -> String {
+        self.name.to_lowercase()
+    }
 }
 
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
@@ -35,9 +41,18 @@ pub(crate) enum Os {
 pub(crate) enum Architecture {
     Amd64,
     Aarch64,
+    Arm,
 }
 
-// TODO: create licenses enum
+impl ToString for Architecture {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Amd64 => "x86_64".to_string(),
+            Self::Aarch64 => "aarch64".to_string(),
+            Self::Arm => "arm".to_string(),
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {

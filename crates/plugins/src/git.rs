@@ -36,10 +36,7 @@ impl GitSource {
         ]);
         let clone_result = git.output().await?;
         match clone_result.status.success() {
-            true => {
-                println!("Cloned Repository Successfully!");
-                Ok(())
-            }
+            true => Ok(()),
             false => Err(anyhow!(
                 "Error cloning Git repo {}: {}",
                 self.source_url,
@@ -54,10 +51,7 @@ impl GitSource {
         git.args(["-C", &self.local_repo_dir.to_string_lossy(), "pull"]);
         let pull_result = git.output().await?;
         match pull_result.status.success() {
-            true => {
-                println!("Updated repository successfully");
-                Ok(())
-            }
+            true => Ok(()),
             false => Err(anyhow!(
                 "Error updating Git repo at {:?}: {}",
                 self.local_repo_dir,

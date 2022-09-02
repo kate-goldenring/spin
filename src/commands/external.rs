@@ -11,7 +11,10 @@ pub async fn execute_external_subcommand(args: Vec<String>) -> Result<()> {
     let plugins_dir = get_spin_plugins_directory()?;
     check_plugin_spin_compatibility(plugin_name, env!("VERGEN_BUILD_SEMVER"), &plugins_dir)?;
     let path = plugins_dir.join(plugin_name);
-    let binary = path.join(plugin_name);
+    let mut binary = path.join(plugin_name);
+    if cfg!(target_os = "windows") {
+        binary.set_extension("exe");
+    }
     let mut command = Command::new(binary);
     if args.len() > 1 {
         command.args(&args[1..]);
