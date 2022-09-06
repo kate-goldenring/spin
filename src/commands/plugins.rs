@@ -10,6 +10,8 @@ use std::path::PathBuf;
 use tracing::log;
 use url::Url;
 
+use crate::opts::*;
+
 const SPIN_PLUGINS_REPO: &str = "https://github.com/fermyon/spin-plugins/";
 
 /// Install/uninstall Spin plugins.
@@ -43,30 +45,30 @@ impl PluginCommands {
 pub struct Install {
     /// Name of Spin plugin.
     #[clap(
-        name = "PLUGIN_NAME",
-        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
-        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
-        required_unless_present_any = ["REMOTE_PLUGIN_MANIFEST", "LOCAL_PLUGIN_MANIFEST"],
+        name = PLUGIN_NAME_OPT,
+        conflicts_with = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
+        required_unless_present_any = [PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT, PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT],
     )]
     pub name: Option<String>,
 
     /// Path to local plugin manifest.
     #[clap(
-        name = "LOCAL_PLUGIN_MANIFEST",
+        name = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
         short = 'f',
         long = "file",
-        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
-        conflicts_with = "PLUGIN_NAME"
+        conflicts_with = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_NAME_OPT,
     )]
     pub local_manifest_src: Option<PathBuf>,
 
     /// Path to remote plugin manifest.
     #[clap(
-        name = "REMOTE_PLUGIN_MANIFEST",
+        name = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
         short = 'u',
         long = "url",
-        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
-        conflicts_with = "PLUGIN_NAME"
+        conflicts_with = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_NAME_OPT,
     )]
     pub remote_manifest_src: Option<Url>,
 
@@ -79,9 +81,9 @@ pub struct Install {
     #[clap(
         long = "version",
         short = 'v',
-        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
-        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
-        requires("PLUGIN_NAME")
+        conflicts_with = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
+        requires(PLUGIN_NAME_OPT)
     )]
     pub version: Option<Version>,
 }
@@ -124,9 +126,9 @@ impl Uninstall {
 pub struct Upgrade {
     /// Name of Spin plugin to upgrade.
     #[clap(
-        name = "PLUGIN_NAME",
-        conflicts_with = "ALL",
-        required_unless_present_any = ["ALL"],
+        name = PLUGIN_NAME_OPT,
+        conflicts_with = PLUGIN_ALL_OPT,
+        required_unless_present_any = [PLUGIN_ALL_OPT],
     )]
     pub name: Option<String>,
 
@@ -134,29 +136,29 @@ pub struct Upgrade {
     #[clap(
         short = 'a',
         long = "all",
-        name = "ALL",
-        conflicts_with = "PLUGIN_NAME",
-        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
-        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
-        takes_value = false
+        name = PLUGIN_ALL_OPT,
+        conflicts_with = PLUGIN_NAME_OPT,
+        conflicts_with = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
+        takes_value = false,
     )]
     pub all: bool,
 
     /// Path to local plugin manifest.
     #[clap(
-        name = "LOCAL_PLUGIN_MANIFEST",
+        name = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
         short = 'f',
         long = "file",
-        conflicts_with = "REMOTE_PLUGIN_MANIFEST"
+        conflicts_with = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
     )]
     pub local_manifest_src: Option<PathBuf>,
 
     /// Path to remote plugin manifest.
     #[clap(
-        name = "REMOTE_PLUGIN_MANIFEST",
+        name = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
         short = 'u',
         long = "url",
-        conflicts_with = "LOCAL_PLUGIN_MANIFEST"
+        conflicts_with = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
     )]
     pub remote_manifest_src: Option<Url>,
 
@@ -169,10 +171,10 @@ pub struct Upgrade {
     #[clap(
         long = "version",
         short = 'v',
-        conflicts_with = "REMOTE_PLUGIN_MANIFEST",
-        conflicts_with = "LOCAL_PLUGIN_MANIFEST",
-        conflicts_with = "ALL",
-        requires("PLUGIN_NAME")
+        conflicts_with = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_LOCAL_PLUGIN_MANIFEST_OPT,
+        conflicts_with = PLUGIN_ALL_OPT,
+        requires(PLUGIN_NAME_OPT)
     )]
     pub version: Option<Version>,
 
