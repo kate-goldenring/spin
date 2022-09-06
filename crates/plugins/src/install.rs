@@ -1,12 +1,12 @@
 use crate::{
     get_manifest_file_name, get_manifest_file_name_version,
+    git::GitSource,
+    plugin_manifest::{Os, PluginManifest},
+    prompt::Prompter,
     version_check::{assert_supported_version, get_plugin_manifest},
     PLUGIN_MANIFESTS_DIRECTORY_NAME, SPIN_INTERNAL_COMMANDS,
 };
 
-use super::git::GitSource;
-use super::plugin_manifest::{Os, PluginManifest};
-use super::prompt::Prompter;
 use anyhow::{anyhow, bail, Result};
 use flate2::read::GzDecoder;
 use semver::Version;
