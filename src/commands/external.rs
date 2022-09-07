@@ -1,9 +1,10 @@
 use crate::commands::plugins::get_spin_plugins_directory;
 
 use anyhow::{anyhow, Result};
+use clap::App;
 use spin_plugins::version_check::assert_supported_version;
 use spin_plugins::store::PluginStore;
-use std::{collections::HashMap, env, io, path::Path};
+use std::{collections::HashMap, env, path::Path, process};
 use tokio::process::Command;
 use tracing::log;
 
@@ -12,7 +13,7 @@ use tracing::log;
 /// subprocess.
 pub async fn execute_external_subcommand(
     args: Vec<String>,
-    print_help: fn() -> io::Result<()>,
+    app: App<'_>,
 ) -> Result<()> {
     let plugin_name = args.first().ok_or_else(|| anyhow!("Expected subcommand"))?;
     let plugins_dir = get_spin_plugins_directory()?;
@@ -22,10 +23,10 @@ pub async fn execute_external_subcommand(
         Ok(manifest) => {
             assert_supported_version(env!("VERGEN_BUILD_SEMVER"), &manifest.spin_compatibility)?;
         }
-        Err(e) => {
-            unimplemented!()
-            // print_help();
-            // Err(anyhow!(""))
+        Err(_) => {
+            eprintln!("Unknown command");
+            let mut cli = app.clone();
+            let _ = cli.print_help();
         }
     }
 
@@ -44,6 +45,12 @@ pub async fn execute_external_subcommand(
     // Allow user to interact with stdio/stdout of child process
     let status = command.status().await?;
     log::info!("Exiting process with {}", status);
+    if !status.success() {
+        match status.code() {
+            Some(code) => process::exit(code),
+            _ => process::exit(1)
+        }
+    }
     Ok(())
 }
 
