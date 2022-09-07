@@ -1,17 +1,14 @@
-use crate::{
-    get_manifest_file_name, plugin_manifest::PluginManifest, PLUGIN_MANIFESTS_DIRECTORY_NAME,
-};
-use anyhow::{anyhow, Result};
+use crate::store::PluginStore;
+use anyhow::{anyhow, Context, Result};
 use semver::{Version, VersionReq};
-use std::{fs::File, path::Path};
+use std::path::Path;
 
 /// Checks whether the plugin supports the currently running version of Spin.
 pub fn assert_supported_version(spin_version: &str, supported: &str) -> Result<()> {
-    let supported = VersionReq::parse(supported).map_err(|e| {
-        anyhow!(
-            "could not parse manifest compatibility version {} as valid semver -- {:?}",
+    let supported = VersionReq::parse(supported).with_context(|| {
+        format!(
+            "could not parse manifest compatibility version {} as valid semver",
             supported,
-            e
         )
     })?;
     let version = Version::parse(spin_version)?;
@@ -25,17 +22,6 @@ pub fn assert_supported_version(spin_version: &str, supported: &str) -> Result<(
     }
 }
 
-pub(crate) fn get_plugin_manifest(plugin_name: &str, plugins_dir: &Path) -> Result<PluginManifest> {
-    let manifest_path = plugins_dir
-        .join(PLUGIN_MANIFESTS_DIRECTORY_NAME)
-        .join(get_manifest_file_name(plugin_name));
-    log::info!("Reading plugin manifest from {:?}", manifest_path);
-    let manifest_file =
-        File::open(manifest_path).map_err(|_| anyhow!("The plugin does not exist"))?;
-    let manifest = serde_json::from_reader(manifest_file)?;
-    Ok(manifest)
-}
-
 /// Verifies that a plugin is compatible with the currently running version of Spin
 /// by fetching it's manifest and assessing it's `spinCompatibility`.
 pub fn check_plugin_spin_compatibility(
@@ -43,7 +29,7 @@ pub fn check_plugin_spin_compatibility(
     spin_version: &str,
     plugins_dir: &Path,
 ) -> Result<()> {
-    let manifest = get_plugin_manifest(plugin_name, plugins_dir)?;
+    let manifest = PluginStore::load_plugin_manifest(plugin_name, plugins_dir)?;
     assert_supported_version(spin_version, &manifest.spin_compatibility)
 }
 

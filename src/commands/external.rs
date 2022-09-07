@@ -1,18 +1,35 @@
 use crate::commands::plugins::get_spin_plugins_directory;
 
 use anyhow::{anyhow, Result};
-use spin_plugins::version_check::check_plugin_spin_compatibility;
-use std::{collections::HashMap, env, path::Path};
+use spin_plugins::version_check::assert_supported_version;
+use spin_plugins::store::PluginStore;
+use std::{collections::HashMap, env, io, path::Path};
 use tokio::process::Command;
 use tracing::log;
 
 /// Executes a Spin plugin as a subprocess, expecting the first argument to
 /// indicate the plugin to execute. Passes all subsequent arguments on to the
 /// subprocess.
-pub async fn execute_external_subcommand(args: Vec<String>) -> Result<()> {
+pub async fn execute_external_subcommand(
+    args: Vec<String>,
+    print_help: fn() -> io::Result<()>,
+) -> Result<()> {
     let plugin_name = args.first().ok_or_else(|| anyhow!("Expected subcommand"))?;
     let plugins_dir = get_spin_plugins_directory()?;
-    check_plugin_spin_compatibility(plugin_name, env!("VERGEN_BUILD_SEMVER"), &plugins_dir)?;
+    let plugin_manifest = PluginStore::load_plugin_manifest(plugin_name, &plugins_dir);
+    if plugin_manifest.is_err() {}
+    match plugin_manifest {
+        Ok(manifest) => {
+            assert_supported_version(env!("VERGEN_BUILD_SEMVER"), &manifest.spin_compatibility)?;
+        }
+        Err(e) => {
+            unimplemented!()
+            // print_help();
+            // Err(anyhow!(""))
+        }
+    }
+
+    // check_plugin_spin_compatibility(plugin_name, env!("VERGEN_BUILD_SEMVER"), &plugins_dir);
     let path = plugins_dir.join(plugin_name);
     let mut binary = path.join(plugin_name);
     if cfg!(target_os = "windows") {

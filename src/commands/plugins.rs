@@ -4,7 +4,7 @@ use semver::Version;
 use spin_plugins::{
     install::{ManifestLocation, PluginInfo, PluginInstaller},
     uninstall::PluginUninstaller,
-    PLUGIN_MANIFESTS_DIRECTORY_NAME,
+    store,
 };
 use std::path::PathBuf;
 use tracing::log;
@@ -62,7 +62,7 @@ pub struct Install {
     )]
     pub local_manifest_src: Option<PathBuf>,
 
-    /// Path to remote plugin manifest.
+    /// URL of remote plugin manifest to install.
     #[clap(
         name = PLUGIN_REMOTE_PLUGIN_MANIFEST_OPT,
         short = 'u',
@@ -190,7 +190,7 @@ impl Upgrade {
     pub async fn run(self) -> Result<()> {
         let plugins_dir = get_spin_plugins_directory()?;
         let spin_version = env!("VERGEN_BUILD_SEMVER");
-        let manifest_dir = plugins_dir.join(PLUGIN_MANIFESTS_DIRECTORY_NAME);
+        let manifest_dir = plugins_dir.join(store::PLUGIN_MANIFESTS_DIRECTORY_NAME);
 
         // Check if no plugins are currently installed
         if !manifest_dir.exists() {

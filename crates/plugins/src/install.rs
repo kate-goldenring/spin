@@ -1,13 +1,13 @@
 use crate::{
-    get_manifest_file_name, get_manifest_file_name_version,
     git::GitSource,
     plugin_manifest::{Os, PluginManifest},
     prompt::Prompter,
-    version_check::{assert_supported_version, get_plugin_manifest},
-    PLUGIN_MANIFESTS_DIRECTORY_NAME, SPIN_INTERNAL_COMMANDS,
+    store::PluginStore,
+    version_check::assert_supported_version,
+    SPIN_INTERNAL_COMMANDS,
 };
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use flate2::read::GzDecoder;
 use semver::Version;
 use std::{
@@ -19,11 +19,6 @@ use tar::Archive;
 use tempfile::{tempdir, TempDir};
 use url::Url;
 
-// Name of directory that contains the cloned centralized Spin plugins
-// repository
-const PLUGINS_REPO_LOCAL_DIRECTORY: &str = ".spin-plugins";
-// Name of directory containing the installed manifests
-const PLUGINS_REPO_MANIFESTS_DIRECTORY: &str = "manifests";
 // Url scheme prefix of a plugin that is installed from a local source
 const URL_FILE_SCHEME: &str = "file";
 
@@ -40,9 +35,9 @@ pub enum ManifestLocation {
 /// Information about the plugin manifest that should be fetched from the
 /// centralized Spin plugins repository.
 pub struct PluginInfo {
-    name: String,
+    pub name: String,
     repo_url: Url,
-    version: Option<Version>,
+    pub version: Option<Version>,
 }
 
 impl PluginInfo {
@@ -52,6 +47,13 @@ impl PluginInfo {
             repo_url,
             version,
         }
+    }
+
+    pub fn version_string(&self) -> String {
+        self.version
+            .as_ref()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| String::from("latest"))
     }
 }
 
@@ -96,8 +98,9 @@ impl PluginInstaller {
             }
             ManifestLocation::Local(path) => {
                 log::info!("Pulling manifest for plugin from {:?}", path);
-                let file = File::open(path)
-                    .map_err(|_| anyhow!("The local manifest could not be opened"))?;
+                let file = File::open(path).with_context(|| {
+                    format!("The local manifest {} could not be opened", path.display())
+                })?;
                 serde_json::from_reader(file)?
             }
             ManifestLocation::PluginsRepository(info) => {
@@ -109,14 +112,9 @@ impl PluginInstaller {
                 let git_source = GitSource::new(
                     &info.repo_url,
                     None,
-                    self.plugins_dir.join(PLUGINS_REPO_LOCAL_DIRECTORY),
+                    PluginStore::plugin_manifests_repo_path(&self.plugins_dir),
                 )?;
-                if !self
-                    .plugins_dir
-                    .join(PLUGINS_REPO_LOCAL_DIRECTORY)
-                    .join(".git")
-                    .exists()
-                {
+                if !PluginStore::plugin_manifests_repo_exists(&self.plugins_dir) {
                     git_source.clone().await?;
                 } else {
                     // TODO: consider moving this to a separate `spin plugin
@@ -124,22 +122,16 @@ impl PluginInstaller {
                     // repository on each install.
                     git_source.pull().await?;
                 }
-                let file = File::open(
-                    &self
-                        .plugins_dir
-                        .join(PLUGINS_REPO_LOCAL_DIRECTORY)
-                        .join(PLUGINS_REPO_MANIFESTS_DIRECTORY)
-                        .join(&info.name)
-                        .join(get_manifest_file_name_version(&info.name, &info.version)),
-                )
-                .map_err(|_| {
-                    anyhow!(
-                        "Could not find plugin [{} {:?}] in centralized repository",
+                let file = File::open(PluginStore::spin_plugins_repo_manifest_path(
+                    &self.plugins_dir,
+                    &info.name,
+                    &info.version,
+                ))
+                .with_context(|| {
+                    format!(
+                        "Could not find plugin [{} {}] in centralized repository",
                         info.name,
-                        info.version
-                            .as_ref()
-                            .map(|s| s.to_string())
-                            .unwrap_or_else(|| String::from("latest"))
+                        info.version_string()
                     )
                 })?;
                 serde_json::from_reader(file)?
@@ -153,13 +145,15 @@ impl PluginInstaller {
             .any(|&s| s == plugin_manifest.name())
         {
             bail!(
-                "Trying to install a plugin with the same name '{}' as an internal plugin",
+                "Can't install a plugin with the same name '{}' as an internal plugin",
                 plugin_manifest.name()
             );
         }
 
         // Disallow downgrades and reinstalling identical plugins
-        if let Ok(installed) = get_plugin_manifest(&plugin_manifest.name(), &self.plugins_dir) {
+        if let Ok(installed) =
+            PluginStore::load_plugin_manifest(&plugin_manifest.name(), &self.plugins_dir)
+        {
             if installed.version > plugin_manifest.version || installed == plugin_manifest {
                 bail!(
                     "plugin {} already installed with version {} but attempting to install same or older version ({})",
@@ -229,7 +223,7 @@ impl PluginInstaller {
         let mut archive = Archive::new(tar);
         archive.set_preserve_permissions(true);
         // Create subdirectory in plugins directory for this plugin
-        let plugin_sub_dir = self.plugins_dir.join(plugin_name);
+        let plugin_sub_dir = PluginStore::plugin_subdirectory_path(&self.plugins_dir, plugin_name);
         fs::remove_dir_all(&plugin_sub_dir).ok();
         fs::create_dir_all(&plugin_sub_dir)?;
         archive.unpack(&plugin_sub_dir)?;
@@ -253,23 +247,23 @@ impl PluginInstaller {
     }
 
     fn verify_checksum(&self, plugin_file: &PathBuf, checksum: &str) -> Result<()> {
-        let binary_sha256 = file_digest_string(plugin_file).expect("failed to get sha for parcel");
-        let verification_sha256 = checksum;
-        if binary_sha256 == verification_sha256 {
+        let actual_sha256 = file_digest_string(plugin_file).expect("failed to get sha for parcel");
+        let expected_sha256 = checksum;
+        if actual_sha256 == expected_sha256 {
             log::info!("Package checksum verified successfully");
             Ok(())
         } else {
-            Err(anyhow!(
-                "Could not validate Checksum, aborting installation"
-            ))
+            Err(anyhow!("Checksum did not match, aborting installation"))
         }
     }
 
     fn add_to_manifest_dir(&self, plugin_manifest: &PluginManifest) -> Result<()> {
-        let manifests_dir = self.plugins_dir.join(PLUGIN_MANIFESTS_DIRECTORY_NAME);
+        let manifests_dir = PluginStore::installed_manifests_directory(&self.plugins_dir);
         fs::create_dir_all(&manifests_dir)?;
         serde_json::to_writer(
-            &File::create(manifests_dir.join(get_manifest_file_name(&plugin_manifest.name())))?,
+            &File::create(
+                manifests_dir.join(PluginStore::manifest_file_name(&plugin_manifest.name())),
+            )?,
             plugin_manifest,
         )?;
         log::trace!("Added manifest for {}", &plugin_manifest.name());

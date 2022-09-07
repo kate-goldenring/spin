@@ -1,6 +1,7 @@
-use crate::{get_manifest_file_name, PLUGIN_MANIFESTS_DIRECTORY_NAME};
 use anyhow::Result;
 use std::{fs, path::PathBuf};
+
+use crate::store::PluginStore;
 
 /// Settings for uninstalling a plugin.
 pub struct PluginUninstaller {
@@ -22,10 +23,8 @@ impl PluginUninstaller {
     /// from the local plugins directory.
     pub fn run(&self) -> Result<()> {
         // Check if plugin is installed
-        let manifest_file = self
-            .plugins_dir
-            .join(PLUGIN_MANIFESTS_DIRECTORY_NAME)
-            .join(get_manifest_file_name(&self.plugin_name));
+        let manifest_file =
+            PluginStore::installed_manifest_path(&self.plugins_dir, &self.plugin_name);
         let plugin_exists = manifest_file.exists();
         match plugin_exists {
             // Remove the manifest and the plugin installation directory

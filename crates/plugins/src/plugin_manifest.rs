@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 /// https://github.com/fermyon/spin-plugins/tree/main/json-schema
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct PluginManifest {
+pub struct PluginManifest {
     /// Name of the plugin.
     name: String,
     /// Option description of the plugin.
@@ -32,7 +32,7 @@ impl PluginManifest {
 
 /// Describes compatibility and location of a plugin source.
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
-pub(crate) struct PluginPackage {
+pub struct PluginPackage {
     /// Compatible OS.
     pub os: Os,
     /// Compatible architecture.
@@ -46,7 +46,7 @@ pub(crate) struct PluginPackage {
 /// Describes the compatible OS of a plugin
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub(crate) enum Os {
+pub enum Os {
     Linux,
     Osx,
     Windows,
@@ -55,7 +55,7 @@ pub(crate) enum Os {
 /// Describes the compatible architecture of a plugin
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub(crate) enum Architecture {
+pub enum Architecture {
     Amd64,
     Aarch64,
     Arm,
