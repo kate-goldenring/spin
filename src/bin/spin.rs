@@ -17,8 +17,6 @@ async fn main() -> Result<(), Error> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .with_ansi(atty::is(atty::Stream::Stderr))
         .init();
-    let cmd = SpinApp::command();
-    cmd.print_help();
     SpinApp::parse().run().await
 }
 
@@ -73,9 +71,7 @@ impl SpinApp {
             Self::Trigger(TriggerCommands::Http(cmd)) => cmd.run().await,
             Self::Trigger(TriggerCommands::Redis(cmd)) => cmd.run().await,
             Self::Plugin(cmd) => cmd.run().await,
-            Self::External(cmd) => {
-                execute_external_subcommand(cmd, SpinApp::command().print_help).await
-            }
+            Self::External(cmd) => execute_external_subcommand(cmd, SpinApp::command()).await
         }
     }
 }
