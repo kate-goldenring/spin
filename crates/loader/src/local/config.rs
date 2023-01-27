@@ -12,11 +12,43 @@ use crate::common::RawVariable;
 
 /// Container for any version of the manifest.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(tag = "spin_version")]
+// TODO: change this to #[serde(tag = "spin_manifest_version")]
+// when ready to phase out backwards support of `spin_version`
+#[serde(from = "AppSer")]
 pub enum RawAppManifestAnyVersion {
     /// A manifest with API version 1.
     #[serde(rename = "1")]
     V1(RawAppManifest),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum AppSer {
+    OldSkool(AppOldSkool),
+    NewSkool(AppNewSkool),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "spin_version")]
+enum AppOldSkool {
+    #[serde(rename = "1")]
+    V1(RawAppManifest),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "spin_manifest_version")]
+enum AppNewSkool {
+    #[serde(rename = "1")]
+    V1(RawAppManifest),
+}
+
+impl From<AppSer> for RawAppManifestAnyVersion {
+    fn from(value: AppSer) -> Self {
+        match value {
+            AppSer::OldSkool(AppOldSkool::V1(m)) => Self::V1(m),
+            AppSer::NewSkool(AppNewSkool::V1(m)) => Self::V1(m),
+        }
+    }
 }
 
 /// Application configuration local file format.

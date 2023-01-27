@@ -1,4 +1,6 @@
-spin_version = "1"
+spin_manifest_version = "1"
+# could also use old way of specifying version:
+# spin_version = "1"
 authors = ["Fermyon Engineering <engineering@fermyon.com>"]
 description = "A simple application that returns hello."
 name = "spin-hello-world"
