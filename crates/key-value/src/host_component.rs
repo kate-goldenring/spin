@@ -1,16 +1,16 @@
 use crate::{Impl, KeyValueDispatch};
 use spin_app::DynamicHostComponent;
 use spin_core::HostComponent;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 pub const KEY_VALUE_STORES_METADATA_KEY: &str = "key_value_stores";
 
 pub struct KeyValueComponent {
-    impls: HashMap<String, Box<dyn Impl>>,
+    impls: Arc<HashMap<String, Box<dyn Impl>>>,
 }
 
 impl KeyValueComponent {
-    pub fn new(impls: HashMap<String, Box<dyn Impl>>) -> Self {
+    pub fn new(impls: Arc<HashMap<String, Box<dyn Impl>>>) -> Self {
         Self { impls }
     }
 }
@@ -26,12 +26,7 @@ impl HostComponent for KeyValueComponent {
     }
 
     fn build_data(&self) -> Self::Data {
-        KeyValueDispatch::new(
-            self.impls
-                .iter()
-                .map(|(k, v)| (k.clone(), Impl::clone(v.as_ref())))
-                .collect(),
-        )
+        KeyValueDispatch::new(self.impls.clone())
     }
 }
 

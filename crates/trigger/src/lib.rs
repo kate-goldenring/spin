@@ -9,6 +9,7 @@ use std::{
     fs,
     marker::PhantomData,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -117,18 +118,20 @@ impl<Executor: TriggerExecutor> TriggerExecutorBuilder<Executor> {
                         // both change the default store configuration (e.g. use Redis, or an SQLite in-memory
                         // database, or use a different path) and add other named stores with their own
                         // configurations.
-                        [(
-                            "default".to_owned(),
-                            Box::new(key_value_sqlite::KeyValueSqlite::new(
-                                if let Some(key_value_file) = key_value_file {
-                                    key_value_sqlite::DatabaseLocation::Path(key_value_file)
-                                } else {
-                                    key_value_sqlite::DatabaseLocation::InMemory
-                                },
-                            )) as Box<dyn key_value::Impl>,
-                        )]
-                        .into_iter()
-                        .collect(),
+                        Arc::new(
+                            [(
+                                "default".to_owned(),
+                                Box::new(key_value_sqlite::KeyValueSqlite::new(
+                                    if let Some(key_value_file) = key_value_file {
+                                        key_value_sqlite::DatabaseLocation::Path(key_value_file)
+                                    } else {
+                                        key_value_sqlite::DatabaseLocation::InMemory
+                                    },
+                                )) as Box<dyn key_value::Impl>,
+                            )]
+                            .into_iter()
+                            .collect(),
+                        ),
                     ),
                 )?;
                 self.loader.add_dynamic_host_component(

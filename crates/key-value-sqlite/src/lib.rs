@@ -1,5 +1,6 @@
 use anyhow::Result;
 use key_value::{key_value::Error, log_error, Impl, ImplStore};
+use once_cell::sync::OnceCell;
 use rusqlite::Connection;
 use std::{
     path::PathBuf,
@@ -8,32 +9,30 @@ use std::{
 use tokio::task;
 use wit_bindgen_wasmtime::async_trait;
 
-#[derive(Clone)]
 pub enum DatabaseLocation {
     InMemory,
     Path(PathBuf),
 }
 
-#[derive(Clone)]
 pub struct KeyValueSqlite {
     location: DatabaseLocation,
-    connection: Option<Arc<Mutex<Connection>>>,
+    connection: OnceCell<Arc<Mutex<Connection>>>,
 }
 
 impl KeyValueSqlite {
     pub fn new(location: DatabaseLocation) -> Self {
         Self {
             location,
-            connection: None,
+            connection: OnceCell::new(),
         }
     }
 }
 
 #[async_trait]
 impl Impl for KeyValueSqlite {
-    async fn open(&mut self, name: &str) -> Result<Box<dyn ImplStore>, Error> {
-        if self.connection.is_none() {
-            task::block_in_place(|| {
+    async fn open(&self, name: &str) -> Result<Box<dyn ImplStore>, Error> {
+        let connection = task::block_in_place(|| {
+            self.connection.get_or_try_init(|| {
                 let connection = match &self.location {
                     DatabaseLocation::InMemory => {
                         println!("Using in-memory key-value store");
@@ -59,20 +58,14 @@ impl Impl for KeyValueSqlite {
                     )
                     .map_err(log_error)?;
 
-                self.connection = Some(Arc::new(Mutex::new(connection)));
-
-                Ok(())
-            })?;
-        }
+                Ok(Arc::new(Mutex::new(connection)))
+            })
+        })?;
 
         Ok(Box::new(SqliteStore {
             name: name.to_owned(),
-            connection: self.connection.as_ref().unwrap().clone(),
+            connection: connection.clone(),
         }))
-    }
-
-    fn clone(&self) -> Box<dyn Impl> {
-        Box::new(Clone::clone(self))
     }
 }
 
@@ -157,14 +150,14 @@ mod test {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn all() -> Result<()> {
-        let mut kv = KeyValueDispatch::new(
+        let mut kv = KeyValueDispatch::new(Arc::new(
             [(
                 "default".to_owned(),
                 Box::new(KeyValueSqlite::new(DatabaseLocation::InMemory)) as Box<dyn Impl>,
             )]
             .into_iter()
             .collect(),
-        );
+        ));
 
         kv.allowed_stores = ["default", "foo"]
             .into_iter()

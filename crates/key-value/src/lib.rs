@@ -1,5 +1,8 @@
 use anyhow::Result;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 use table::Table;
 use wit_bindgen_wasmtime::async_trait;
 
@@ -22,9 +25,7 @@ impl std::error::Error for Error {}
 
 #[async_trait]
 pub trait Impl: Sync + Send {
-    async fn open(&mut self, name: &str) -> Result<Box<dyn ImplStore>, Error>;
-
-    fn clone(&self) -> Box<dyn Impl>;
+    async fn open(&self, name: &str) -> Result<Box<dyn ImplStore>, Error>;
 }
 
 #[async_trait]
@@ -42,12 +43,12 @@ pub trait ImplStore: Sync + Send {
 
 pub struct KeyValueDispatch {
     pub allowed_stores: HashSet<String>,
-    impls: HashMap<String, Box<dyn Impl>>,
+    impls: Arc<HashMap<String, Box<dyn Impl>>>,
     stores: Table<Box<dyn ImplStore>>,
 }
 
 impl KeyValueDispatch {
-    pub fn new(impls: HashMap<String, Box<dyn Impl>>) -> Self {
+    pub fn new(impls: Arc<HashMap<String, Box<dyn Impl>>>) -> Self {
         Self {
             allowed_stores: HashSet::new(),
             impls,
@@ -63,7 +64,7 @@ impl KeyValue for KeyValueDispatch {
             self.stores
                 .push(
                     self.impls
-                        .get_mut(name)
+                        .get(name)
                         .ok_or(Error::NoSuchStore)?
                         .open(name)
                         .await?,
