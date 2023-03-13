@@ -76,6 +76,7 @@ impl Default for KeyValueDispatch {
 #[async_trait]
 impl KeyValue for KeyValueDispatch {
     async fn open(&mut self, name: &str) -> Result<StoreHandle, Error> {
+        println!("allowed stores are {:?}", self.allowed_stores);
         if self.allowed_stores.contains(name) {
             self.stores
                 .push(self.manager.get(name).await?)
