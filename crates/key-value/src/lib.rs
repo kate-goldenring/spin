@@ -78,6 +78,7 @@ impl KeyValue for KeyValueDispatch {
     async fn open(&mut self, name: &str) -> Result<StoreHandle, Error> {
         println!("allowed stores are {:?} and name is {name}", self.allowed_stores);
         if self.allowed_stores.contains(name) {
+            println!("entered");
             self.stores
                 .push(self.manager.get(name).await?)
                 .map_err(|()| Error::StoreTableFull)
