@@ -399,7 +399,7 @@ impl DeployCommand {
                     .get_revision_id_cloud(&client, bindle_id.version_string().clone(), app_id)
                     .await?;
 
-                CloudClient::add_channel(
+                let channel_id = CloudClient::add_channel(
                     &client,
                     app_id,
                     String::from(SPIN_DEPLOY_CHANNEL_NAME),
@@ -408,7 +408,18 @@ impl DeployCommand {
                     Some(active_revision_id),
                 )
                 .await
-                .context("Problem creating a channel")?
+                .context("Problem creating a channel")?;
+
+                CloudClient::add_key_value_pair(
+                    &client,
+                    app_id,
+                    String::from("default"),
+                    String::from("kate"),
+                    String::from("kate is rad"),
+                )
+                .await
+                .context("Problem creating key/value")?;
+            channel_id
             }
         };
 
