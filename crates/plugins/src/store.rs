@@ -25,7 +25,7 @@ impl PluginStore {
 
     pub fn try_default() -> Result<Self> {
         if let Ok(brew_prefix) = std::env::var("HOMEBREW_PREFIX") {
-            let plugins_dir = Path::new(&brew_prefix).join("var/spin/plugins");
+            let plugins_dir = Path::new(&brew_prefix).join("var/spin");
 
             if plugins_dir.exists() && plugins_dir.is_dir() {
                 println!("Path to brew plugins exists");
