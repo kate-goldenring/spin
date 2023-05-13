@@ -21,7 +21,7 @@ impl TemplateStore {
 
     pub(crate) fn try_default() -> anyhow::Result<Self> {
         if let Ok(brew_prefix) = std::env::var("HOMEBREW_PREFIX") {
-            let templates_dir = Path::new(&brew_prefix).join("var/spin/templates");
+            let templates_dir = Path::new(&brew_prefix).join("var").join("spin").join("templates");
 
             if templates_dir.exists() && templates_dir.is_dir() {
                 println!("Path to brew templates exists");
