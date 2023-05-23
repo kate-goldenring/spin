@@ -102,6 +102,12 @@ pub struct DeployCommand {
     /// Can be used multiple times.
     #[clap(long = "key-value", parse(try_from_str = parse_kv))]
     pub key_values: Vec<(String, String)>,
+
+    /// Set a variable pair (variable=value) in the deployed application.
+    /// Any existing value will be overwritten.
+    /// Can be used multiple times.
+    #[clap(long = "variable", parse(try_from_str = parse_kv))]
+    pub variables: Vec<(String, String)>,
 }
 
 impl DeployCommand {
@@ -454,6 +460,18 @@ impl DeployCommand {
                     .context("Problem creating key/value")?;
                 }
 
+                for var in self.variables {
+                    println!("Variable is {} and val is {}", var.0, var.1);
+                    CloudClient::add_variable_pair(
+                        &client,
+                        app_id,
+                        var.0,
+                        var.1,
+                    )
+                    .await
+                    .context("Problem creating variable")?;
+                }
+
                 existing_channel_id
             }
             Err(_) => {
@@ -491,6 +509,17 @@ impl DeployCommand {
                     .context("Problem creating key/value")?;
                 }
 
+                for var in self.variables {
+                    println!("Variable is {} and val is {}", var.0, var.1);
+                    CloudClient::add_variable_pair(
+                        &client,
+                        app_id,
+                        var.0,
+                        var.1,
+                    )
+                    .await
+                    .context("Problem creating variable")?;
+                }
                 channel_id
             }
         };

@@ -11,12 +11,13 @@ use cloud_openapi::{
         configuration::{ApiKey, Configuration},
         device_codes_api::api_device_codes_post,
         key_value_pairs_api::api_key_value_pairs_post,
+        variable_pairs_api::api_variable_pairs_post,
         revisions_api::{api_revisions_get, api_revisions_post},
         Error, ResponseContent,
     },
     models::{
         AppItemPage, ChannelItem, ChannelItemPage, ChannelRevisionSelectionStrategy,
-        CreateAppCommand, CreateChannelCommand, CreateDeviceCodeCommand, CreateKeyValuePairCommand,
+        CreateAppCommand, CreateChannelCommand, CreateDeviceCodeCommand, CreateKeyValuePairCommand, CreateVariablePairCommand,
         DeviceCodeItem, GetChannelLogsVm, RefreshTokenCommand, RegisterRevisionCommand,
         RevisionItemPage, TokenInfo, UpdateEnvironmentVariableDto,
     },
@@ -326,6 +327,25 @@ impl Client {
                 app_id,
                 store_name,
                 key,
+                value,
+            },
+            None,
+        )
+        .await
+        .map_err(format_response_error)
+    }
+
+    pub async fn add_variable_pair(
+        &self,
+        app_id: Uuid,
+        variable: String,
+        value: String,
+    ) -> anyhow::Result<()> {
+        api_variable_pairs_post(
+            &self.configuration,
+            CreateVariablePairCommand {
+                app_id,
+                variable,
                 value,
             },
             None,
