@@ -74,14 +74,7 @@ pub async fn execute_external_subcommand(
                 .any(|(name, _)| name == &plugin_name)
             {
                 println!("The `{plugin_name}` plugin is required. Installing now.");
-                let plugin_installer = Install {
-                    name: Some(plugin_name.clone()),
-                    yes_to_all: true,
-                    local_manifest_src: None,
-                    remote_manifest_src: None,
-                    override_compatibility_check: false,
-                    version: None,
-                };
+                let plugin_installer = Install::new_with_name(&plugin_name, true);
                 // Automatically update plugins if the cloud plugin manifest does not exist
                 // TODO: remove this eventually once very unlikely to not have updated
                 if let Err(e) = plugin_installer.run().await {
