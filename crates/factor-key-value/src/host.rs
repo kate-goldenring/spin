@@ -5,7 +5,7 @@ use spin_resource_table::Table;
 use spin_telemetry::traces::{self, Blame};
 use spin_world::v2::key_value;
 use spin_world::wasi::keyvalue as wasi_keyvalue;
-use std::{collections::HashSet, sync::Arc};
+use std::{any::Any, collections::HashSet, sync::Arc};
 use tracing::instrument;
 
 const DEFAULT_STORE_TABLE_CAPACITY: u32 = 256;
@@ -27,7 +27,7 @@ pub trait StoreManager: Sync + Send {
 }
 
 #[async_trait]
-pub trait Store: Sync + Send {
+pub trait Store: Sync + Send + Any {
     async fn after_open(&self) -> Result<(), Error> {
         Ok(())
     }
@@ -105,6 +105,10 @@ impl KeyValueDispatch {
             .ok_or(wasi_keyvalue::atomics::Error::Other(
                 "compare and swap not found".to_string(),
             ))
+    }
+
+    pub fn store_manager(&self) -> Arc<dyn StoreManager> {
+        self.manager.clone()
     }
 }
 
